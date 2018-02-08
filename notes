@@ -1,0 +1,16 @@
+install notes
+
+http://www.pyimagesearch.com/2016/12/05/macos-install-opencv-3-and-python-3-5/
+Had to fix path to opencv_contrib
+Had to add PYTHON3_NUMPY_INCLUDE_DIRS
+
+brew install python3
+brew tap Homebrew/python
+brew install numpy --with-python3
+brew install matplotlib --with-python3
+
+cdvirtualenv
+cd lib/python3.6/site-packages/
+ln -s /usr/local/python/3.6/cv2.so cv2.so
+
+.pth files instead?
