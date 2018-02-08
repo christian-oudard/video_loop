@@ -19,29 +19,61 @@ def video_loop(delay):
 
     buf_size = int(delay * fps)
     buf = np.zeros(
+        # (buf_size, height, width),
         (buf_size, height, width, 3),
         dtype=np.uint8,
     )
     i = 0
     while cap.isOpened():
+        # Capture.
         ret, frame = cap.read()
         if not ret:
             break
 
         frame = np.fliplr(frame)
-
-        cv2.imshow('loop', buf[i])
-        buf[i] = frame
+        buf[i] = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
 
         i = (i + 1) % buf_size
 
-        if cv2.waitKey(1) != -1:
-            break
+        # Display.
+        n_frames = 3
+        frames = [ buf[(i + j) % buf_size] for j in range(n_frames) ]
+        frame = sum( f // n_frames for f in frames )
+
+        lab_l = frame[:, :, 0]
+
+        blurred = cv2.medianBlur(lab_l, 5)
+        laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
+        brighten_percentile(laplacian, 99.8)
+
+        float_lab_l = np.float64(lab_l) - laplacian
+        np.clip(float_lab_l, 0, 255, out=float_lab_l)
+        lab_l = np.uint8(float_lab_l)
+
+        frame[:, :, 0] = lab_l
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_Lab2BGR)
+
+        cv2.imshow('loop', frame)
+
+        key = cv2.waitKey(1)
+        if key != -1:
+            # break
+            pass
 
     cap.release()
 
     cv2.destroyAllWindows()
 
 
+def brighten_percentile(img, p):
+    percentile_brightness = np.percentile(img, p)
+    if percentile_brightness == 0:
+        brightness_scale = 1
+    else:
+        brightness_scale = int(255 / percentile_brightness)
+    img *= brightness_scale
+
+
 if __name__ == '__main__':
-    video_loop(1.5)
+    video_loop(1.6)
