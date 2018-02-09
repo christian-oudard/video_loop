@@ -1,6 +1,8 @@
 # TODO
 # Threading for capture.
 
+import time
+
 import cv2
 from imutils.video import WebcamVideoStream
 import numpy as np
@@ -20,23 +22,30 @@ def video_loop(delay):
     height = int(vs.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     buf_size = int(delay * fps)
+    timer_done = False
     buf = np.zeros(
         # (buf_size, height, width),
         (buf_size, height, width, 3),
         dtype=np.uint8,
     )
     i = 0
+    start_time = time.time()
     while True:
         # Capture.
         frame = vs.read()
-
         frame = np.fliplr(frame)
         buf[i] = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
+
+        if not timer_done:
+            frame_time = time.time()
+            if frame_time - start_time > delay:
+                buf_size = i + 1
+                timer_done = True
 
         i = (i + 1) % buf_size
 
         # Display.
-        n_frames = 3
+        n_frames = 1
         frames = [ buf[(i + j) % buf_size] for j in range(n_frames) ]
         frame = sum( f // n_frames for f in frames )
 
@@ -75,4 +84,4 @@ def brighten_percentile(img, p):
 
 
 if __name__ == '__main__':
-    video_loop(3)
+    video_loop(15.0)
