@@ -1,8 +1,3 @@
-# TODO
-# Threading for capture.
-
-import time
-
 import cv2
 from imutils.video import WebcamVideoStream
 import numpy as np
@@ -22,47 +17,20 @@ def video_loop(delay):
     height = int(vs.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     buf_size = int(delay * fps)
-    timer_done = False
     buf = np.zeros(
-        # (buf_size, height, width),
         (buf_size, height, width, 3),
         dtype=np.uint8,
     )
     i = 0
-    start_time = time.time()
+
     while True:
         # Capture.
-        frame = vs.read()
-        frame = np.fliplr(frame)
-        buf[i] = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
-
-        if not timer_done:
-            frame_time = time.time()
-            if frame_time - start_time > delay:
-                buf_size = i + 1
-                timer_done = True
+        buf[i] = vs.read()
 
         i = (i + 1) % buf_size
 
         # Display.
-        n_frames = 1
-        frames = [ buf[(i + j) % buf_size] for j in range(n_frames) ]
-        frame = sum( f // n_frames for f in frames )
-
-        lab_l = frame[:, :, 0]
-
-        blurred = cv2.medianBlur(lab_l, 5)
-        laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
-        brighten_percentile(laplacian, 99.9)
-
-        float_lab_l = np.float64(lab_l) - laplacian
-        np.clip(float_lab_l, 0, 255, out=float_lab_l)
-        lab_l = np.uint8(float_lab_l)
-
-        frame[:, :, 0] = lab_l
-
-        frame = cv2.cvtColor(frame, cv2.COLOR_Lab2BGR)
-
+        frame = process_frame(buf[i])
         cv2.imshow('loop', frame)
 
         key = cv2.waitKey(1)
@@ -72,6 +40,28 @@ def video_loop(delay):
 
     cv2.destroyAllWindows()
     vs.stop()
+
+
+def process_frame(frame, edge_weight=1.3):
+    frame = np.fliplr(frame)
+
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
+    lab_l = frame[:, :, 0]
+
+    # Get an edge detection using median blur and the laplacian.
+    blurred = cv2.medianBlur(lab_l, 5)
+    laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
+    brighten_percentile(laplacian, 99.9)
+
+    # Darken the picture along edges.
+    float_lab_l = np.float64(lab_l) - edge_weight * laplacian
+    np.clip(float_lab_l, 0, 255, out=float_lab_l)
+    lab_l = np.uint8(float_lab_l)
+
+    frame[:, :, 0] = lab_l
+    frame = cv2.cvtColor(frame, cv2.COLOR_Lab2BGR)
+
+    return frame
 
 
 def brighten_percentile(img, p):
@@ -84,4 +74,4 @@ def brighten_percentile(img, p):
 
 
 if __name__ == '__main__':
-    video_loop(15.0)
+    video_loop(3.0)
