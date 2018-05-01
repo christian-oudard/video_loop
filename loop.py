@@ -17,6 +17,8 @@ def video_loop(delay):
     height = int(vs.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     buf_size = int(delay * fps)
+    if buf_size == 0:
+        buf_size = 1
     buf = np.zeros(
         (buf_size, height, width, 3),
         dtype=np.uint8,
@@ -74,4 +76,13 @@ def brighten_percentile(img, p):
 
 
 if __name__ == '__main__':
-    video_loop(3.0)
+    import sys
+
+    delay_seconds = 15.0
+    if len(sys.argv) > 1:
+        try:
+            delay_seconds = float(sys.argv[1])
+        except ValueError:
+            pass
+
+    video_loop(delay_seconds)
