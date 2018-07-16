@@ -1,4 +1,4 @@
-Installation notes for MacOS
+== Installation notes for MacOS
 
 http://www.pyimagesearch.com/2016/12/05/macos-install-opencv-3-and-python-3-5/
 Had to fix path to opencv_contrib
@@ -12,3 +12,8 @@ brew install matplotlib --with-python3
 cdvirtualenv
 cd lib/python3.6/site-packages/
 ln -s /usr/local/python/3.6/cv2.so cv2.so
+
+
+== Installation notes for Ubuntu
+
+$ sudo apt install python3-opencv
