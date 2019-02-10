@@ -22,20 +22,29 @@ def video_loop(delay):
     buf_size = int(delay * fps)
     if buf_size == 0:
         buf_size = 1
-    buf = np.zeros(
-        (buf_size, height, width, 3),
-        dtype=np.uint8,
-    )
+    buf = {}
     i = 0
-    frame_number = 0
     while True:
         # Capture.
+        # Despeckle before main processing.
         buf[i] = vs.read()
+        buf[i] = cv2.medianBlur(buf[i], 3)
 
-        i = (i + 1) % buf_size
+        # Collect the oldest few frames for frame processing.
+        # Start at slow speed until buffer is full and we catch up to it.
+        oldest_i = min(buf.keys())
+        if i < (2 * buf_size):
+            display_i = int(i**2 / (4 * buf_size))
+        else:
+            display_i = oldest_i
+        input_frames = []
+        for offset in range(3):
+            j = display_i + offset
+            if j in buf:
+                input_frames.append(buf[j])
 
         # Display.
-        frame = process_frame(buf[i], frame_number)
+        frame = process_frame(input_frames, i)
         cv2.imshow('loop', frame)
 
         key = cv2.waitKey(1)
@@ -43,14 +52,13 @@ def video_loop(delay):
             # break
             pass
 
-        frame_number += 1
+        # Rotate buffer.
+        buf.pop(i - buf_size, None)
+        i += 1
 
     cv2.destroyAllWindows()
     vs.stop()
 
-
-# Flipped, CIELAB frame data.
-previous_frame = None
 
 def component_ranges(frame):
     # Axis 0 is the width first, then the height second.
@@ -59,27 +67,19 @@ def component_ranges(frame):
         np.max(np.max(frame, axis=0), axis=0),
     ])
 
-def process_frame(frame, frame_number):
-    global previous_frame
+
+def process_frame(frame_list, frame_number):
+    frame = average_frames(frame_list)
 
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
 
     frame = np.fliplr(frame)
-    frame = cv2.medianBlur(frame, 3)
-
-    if previous_frame is not None:
-        avg_frame = average_frames([frame, previous_frame])
-    else:
-        avg_frame = frame
-    previous_frame = frame
-    frame = avg_frame
 
     # lab_l = frame[:, :, 0]
     # frame[:, :, 0] = lab_l
 
-    factor = screen_width / frame.shape[1]
-
-    frame = cv2.resize(frame, None, fx=factor, fy=factor)
+    factor = screen_height / frame.shape[0]
+    frame = cv2.resize(frame, None, fx=factor, fy=factor * 1.01)
     frame = cv2.cvtColor(frame, cv2.COLOR_Lab2BGR)
 
     return frame
