@@ -15,7 +15,7 @@ def video_loop(delay):
     cv2.namedWindow('loop', cv2.WINDOW_NORMAL)
     cv2.setWindowProperty('loop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-    fps = int(vs.stream.get(cv2.CAP_PROP_FPS) * 2)  # FPS off by 2x, not sure why.
+    fps = int(vs.stream.get(cv2.CAP_PROP_FPS) * 2)  # Off by a factor of 2, inexplicably.
     width = int(vs.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(vs.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -31,6 +31,8 @@ def video_loop(delay):
     while True:
         # Capture.
         buf[i] = vs.read()
+
+        i = (i + 1) % buf_size
 
         # Display.
         frame = process_frame(buf[i], frame_number)
