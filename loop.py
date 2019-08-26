@@ -29,7 +29,7 @@ def video_loop(delay):
         # Capture.
         # Despeckle before main processing.
         buf[i] = vs.read()
-        buf[i] = cv2.medianBlur(buf[i], 3)
+        # buf[i] = cv2.medianBlur(buf[i], 3)
 
         # Collect the oldest few frames for frame processing.
         # Start at slow speed until buffer is full and we catch up to it.
@@ -38,14 +38,15 @@ def video_loop(delay):
             display_i = int(i**2 / (4 * buf_size))
         else:
             display_i = oldest_i
-        input_frames = []
-        for offset in range(3):
-            j = display_i + offset
-            if j in buf:
-                input_frames.append(buf[j])
+
+        # input_frames = []
+        # for offset in range(3):
+        #     j = display_i + offset
+        #     if j in buf:
+        #         input_frames.append(buf[j])
 
         # Display.
-        frame = process_frame(input_frames, i)
+        frame = process_frame(buf[oldest_i], i)
         cv2.imshow('loop', frame)
 
         key = cv2.waitKey(1)
@@ -61,9 +62,16 @@ def video_loop(delay):
     vs.stop()
 
 
-def process_frame(frame_list, frame_number):
-    frame = average_frames(frame_list)
-    frame = kaleidoscope(frame, frame_number, n=7, speed=0.2)
+def process_frame(frame, frame_number):
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2XYZ)
+    # k_images = kaleidoscope_images(frame, frame_number, n=13, flip=False, speed=0)
+    k_images = kaleidoscope_images(frame, frame_number, n=7, flip=True, speed=0.2)
+    # k_images = kaleidoscope_images(frame, frame_number, n=3, flip=False, speed=0)
+    # k_images = kaleidoscope_images(frame, frame_number, n=2, flip=True, speed=0)
+    # k_images = kaleidoscope_images(frame, frame_number, n=1, flip=True, speed=0)
+    frame = cv2.addWeighted(maximum_blend(k_images), 0.7, minimum_blend(k_images), 0.3, 0)
+    frame = cv2.cvtColor(frame, cv2.COLOR_XYZ2BGR)
+
     frame = center_frame(frame)
     frame = trim_circle(frame)
     return frame
@@ -75,7 +83,7 @@ def trim_circle(frame):
     center_x = width // 2
     center_y = height // 2
     radius = min(width, height) // 2
-    blur_size = radius // 10
+    blur_size = 7
 
     alpha = np.zeros((height, width, 3), np.uint8)
     cv2.circle(alpha, (center_x, center_y), radius - (blur_size // 2), (255, 255, 255), thickness=-1)
@@ -87,15 +95,30 @@ def trim_circle(frame):
     return out
 
 
-def kaleidoscope(frame, frame_number, n=7, speed=0.1):
+def kaleidoscope_images(frame, frame_number, n=3, flip=True, speed=0.5):
     images = []
     base_angle = speed * frame_number
     for i in range(n):
         angle = base_angle + (360 / n) * i
         rotated = imutils.rotate(frame, angle)
         images.append(rotated)
-        images.append(np.fliplr(rotated))
-    return average_frames(images)
+        if flip:
+            images.append(np.fliplr(rotated))
+    return images
+
+
+def maximum_blend(images):
+    result = images[0]
+    for img in images[1:]:
+        result = cv2.max(result, img)
+    return result
+
+
+def minimum_blend(images):
+    result = images[0]
+    for img in images[1:]:
+        result = cv2.min(result, img)
+    return result
 
 
 def center_frame(frame):
