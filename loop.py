@@ -1,4 +1,5 @@
 import cv2
+import imutils
 from imutils.video import WebcamVideoStream
 import numpy as np
 
@@ -60,29 +61,50 @@ def video_loop(delay):
     vs.stop()
 
 
-def component_ranges(frame):
-    # Axis 0 is the width first, then the height second.
-    return np.dstack([
-        np.min(np.min(frame, axis=0), axis=0),
-        np.max(np.max(frame, axis=0), axis=0),
-    ])
-
-
 def process_frame(frame_list, frame_number):
     frame = average_frames(frame_list)
-
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2Lab)
-
-    frame = np.fliplr(frame)
-
-    # lab_l = frame[:, :, 0]
-    # frame[:, :, 0] = lab_l
-
-    factor = screen_height / frame.shape[0]
-    frame = cv2.resize(frame, None, fx=factor, fy=factor * 1.01)
-    frame = cv2.cvtColor(frame, cv2.COLOR_Lab2BGR)
-
+    frame = kaleidoscope(frame, frame_number, n=7, speed=0.2)
+    frame = center_frame(frame)
+    frame = trim_circle(frame)
     return frame
+
+
+def trim_circle(frame):
+    width = frame.shape[1]
+    height = frame.shape[0]
+    center_x = width // 2
+    center_y = height // 2
+    radius = min(width, height) // 2
+    blur_size = radius // 10
+
+    alpha = np.zeros((height, width, 3), np.uint8)
+    cv2.circle(alpha, (center_x, center_y), radius - (blur_size // 2), (255, 255, 255), thickness=-1)
+    alpha = cv2.blur(alpha, (blur_size, blur_size))
+
+    alpha = alpha.astype(float) / 255
+    frame = frame.astype(float)
+    out = cv2.multiply(alpha, frame) / 255
+    return out
+
+
+def kaleidoscope(frame, frame_number, n=7, speed=0.1):
+    images = []
+    base_angle = speed * frame_number
+    for i in range(n):
+        angle = base_angle + (360 / n) * i
+        rotated = imutils.rotate(frame, angle)
+        images.append(rotated)
+        images.append(np.fliplr(rotated))
+    return average_frames(images)
+
+
+def center_frame(frame):
+    frame = imutils.resize(frame, height=screen_height, inter=cv2.INTER_LINEAR)
+    bg = np.zeros((screen_height, screen_width, 3), dtype=np.uint8)
+    left = screen_width // 2 - frame.shape[1] // 2
+    right = left + frame.shape[1]
+    bg[:, left:right] = frame
+    return bg
 
 
 def average_frames(frames):
@@ -105,6 +127,14 @@ def brighten_percentile(img, p):
     img *= brightness_scale
     np.clip(img, 0, 255, out=img)
     return img
+
+
+def component_ranges(frame):
+    # Axis 0 is the width first, then the height second.
+    return np.dstack([
+        np.min(np.min(frame, axis=0), axis=0),
+        np.max(np.max(frame, axis=0), axis=0),
+    ])
 
 
 if __name__ == '__main__':
