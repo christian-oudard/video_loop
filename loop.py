@@ -39,14 +39,14 @@ def video_loop(delay):
         else:
             display_i = oldest_i
 
-        # input_frames = []
-        # for offset in range(3):
-        #     j = display_i + offset
-        #     if j in buf:
-        #         input_frames.append(buf[j])
+        input_frames = []
+        for offset in range(20):
+            j = display_i + offset
+            if j in buf:
+                input_frames.append(buf[j])
 
         # Display.
-        frame = process_frame(buf[oldest_i], i)
+        frame = process_frame(input_frames, i)
         cv2.imshow('loop', frame)
 
         key = cv2.waitKey(1)
@@ -62,16 +62,17 @@ def video_loop(delay):
     vs.stop()
 
 
-def process_frame(frame, frame_number):
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2XYZ)
-    # k_images = kaleidoscope_images(frame, frame_number, n=13, flip=False, speed=0)
-    k_images = kaleidoscope_images(frame, frame_number, n=7, flip=True, speed=0.2)
-    # k_images = kaleidoscope_images(frame, frame_number, n=3, flip=False, speed=0)
-    # k_images = kaleidoscope_images(frame, frame_number, n=2, flip=True, speed=0)
-    # k_images = kaleidoscope_images(frame, frame_number, n=1, flip=True, speed=0)
-    frame = cv2.addWeighted(maximum_blend(k_images), 0.7, minimum_blend(k_images), 0.3, 0)
-    frame = cv2.cvtColor(frame, cv2.COLOR_XYZ2BGR)
+def process_frame(frame_list, frame_number):
+    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2XYZ)
+    # k_images = kaleidoscope_images(frame, frame_number, n=7, flip=False, speed=0)
+    # frame = cv2.addWeighted(maximum_blend(k_images), 0.7, minimum_blend(k_images), 0.3, 0)
+    # # frame = average_frames(k_images)
+    # frame = cv2.cvtColor(frame, cv2.COLOR_XYZ2BGR)
+    # frame = np.fliplr(frame)
 
+    # frame = cv2.addWeighted(maximum_blend(frame_list), 0.7, minimum_blend(frame_list), 0.3, 0)
+
+    frame = frame_list[0]
     frame = center_frame(frame)
     frame = trim_circle(frame)
     return frame
@@ -97,9 +98,10 @@ def trim_circle(frame):
 
 def kaleidoscope_images(frame, frame_number, n=3, flip=True, speed=0.5):
     images = []
-    base_angle = speed * frame_number
+    angle_offset = speed * frame_number
+    angle_step = (360 / n)
     for i in range(n):
-        angle = base_angle + (360 / n) * i
+        angle = angle_step * (i) + angle_offset
         rotated = imutils.rotate(frame, angle)
         images.append(rotated)
         if flip:
