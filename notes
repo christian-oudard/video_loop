@@ -16,4 +16,4 @@ ln -s /usr/local/python/3.6/cv2.so cv2.so
 
 == Installation notes for Ubuntu
 
-$ sudo apt install python3-opencv
+$ pip install -r requirements.txt

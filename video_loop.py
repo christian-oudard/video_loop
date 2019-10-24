@@ -17,8 +17,8 @@ def video_loop(delay):
     cv2.setWindowProperty('loop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     fps = int(vs.stream.get(cv2.CAP_PROP_FPS) * 2)  # Off by a factor of 2, inexplicably.
-    width = int(vs.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(vs.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # width = int(vs.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
+    # height = int(vs.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     buf_size = int(delay * fps)
     if buf_size == 0:
@@ -40,7 +40,7 @@ def video_loop(delay):
             display_i = oldest_i
 
         input_frames = []
-        for offset in range(20):
+        for offset in range(2):
             j = display_i + offset
             if j in buf:
                 input_frames.append(buf[j])
@@ -63,18 +63,9 @@ def video_loop(delay):
 
 
 def process_frame(frame_list, frame_number):
-    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2XYZ)
-    # k_images = kaleidoscope_images(frame, frame_number, n=7, flip=False, speed=0)
-    # frame = cv2.addWeighted(maximum_blend(k_images), 0.7, minimum_blend(k_images), 0.3, 0)
-    # # frame = average_frames(k_images)
-    # frame = cv2.cvtColor(frame, cv2.COLOR_XYZ2BGR)
-    # frame = np.fliplr(frame)
-
-    # frame = cv2.addWeighted(maximum_blend(frame_list), 0.7, minimum_blend(frame_list), 0.3, 0)
-
-    frame = frame_list[0]
+    frame = average_frames(frame_list)
+    frame = np.fliplr(frame)
     frame = center_frame(frame)
-    frame = trim_circle(frame)
     return frame
 
 
