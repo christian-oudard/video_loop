@@ -27,8 +27,9 @@ def video_loop(delay):
     i = 0
     while True:
         # Capture.
-        # Despeckle before main processing.
         buf[i] = vs.read()
+
+        # Despeckle before main processing.
         # buf[i] = cv2.medianBlur(buf[i], 3)
 
         # Collect the oldest few frames for frame processing.
@@ -40,7 +41,7 @@ def video_loop(delay):
             display_i = oldest_i
 
         input_frames = []
-        for offset in range(2):
+        for offset in range(5):
             j = display_i + offset
             if j in buf:
                 input_frames.append(buf[j])
@@ -51,8 +52,8 @@ def video_loop(delay):
 
         key = cv2.waitKey(1)
         if key != -1:
-            # break
-            pass
+            if key == 27:  # Esc.
+                return
 
         # Rotate buffer.
         buf.pop(i - buf_size, None)
@@ -63,10 +64,25 @@ def video_loop(delay):
 
 
 def process_frame(frame_list, frame_number):
+    first = frame_list[0]
+    last = frame_list[-1]
+
+    difference = abs_sub(first, last)
+
     frame = average_frames(frame_list)
+    frame = average_frames([frame, difference])
+
     frame = np.fliplr(frame)
     frame = center_frame(frame)
     return frame
+
+
+def abs_sub(a, b):
+    sub1 = a - b
+    sub2 = b - a
+    mask = a < b
+    sub1[mask] = sub2[mask]
+    return sub1
 
 
 def trim_circle(frame):

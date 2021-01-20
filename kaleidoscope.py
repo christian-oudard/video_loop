@@ -51,8 +51,8 @@ def video_loop(delay):
 
         key = cv2.waitKey(1)
         if key != -1:
-            # break
-            pass
+            if key == 27:  # Esc.
+                return
 
         # Rotate buffer.
         buf.pop(i - buf_size, None)
@@ -69,7 +69,7 @@ def process_frame(frame_list, frame_number):
     frame = cv2.addWeighted(maximum_blend(k_images), 0.7, minimum_blend(k_images), 0.3, 0)
     # # frame = average_frames(k_images)
     # frame = cv2.cvtColor(frame, cv2.COLOR_XYZ2BGR)
-    # # frame = np.fliplr(frame)
+    frame = np.fliplr(frame)
     # # frame = cv2.addWeighted(maximum_blend(frame_list), 0.7, minimum_blend(frame_list), 0.3, 0)
     frame = center_frame(frame)
     frame = trim_circle(frame)

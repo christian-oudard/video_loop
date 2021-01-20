@@ -6,8 +6,8 @@ Had to add PYTHON3_NUMPY_INCLUDE_DIRS
 
 brew install python3
 brew tap Homebrew/python
-brew install numpy --with-python3
-brew install matplotlib --with-python3
+brew install numpy
+brew install matplotlib
 
 cdvirtualenv
 cd lib/python3.6/site-packages/
@@ -16,4 +16,5 @@ ln -s /usr/local/python/3.6/cv2.so cv2.so
 
 == Installation notes for Ubuntu
 
+$ sudo apt install portaudio19-dev
 $ pip install -r requirements.txt
