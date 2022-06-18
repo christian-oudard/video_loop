@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import imutils
 from imutils.video import WebcamVideoStream
@@ -5,6 +7,8 @@ import numpy as np
 
 screen_width = 2560 // 2
 screen_height = 1440 // 2
+
+FPS = 120
 
 
 def video_loop(delay):
@@ -16,13 +20,22 @@ def video_loop(delay):
     cv2.namedWindow('loop', cv2.WINDOW_NORMAL)
     cv2.setWindowProperty('loop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-    buf_size = 500
+    buf_size = 1000
     if buf_size == 0:
         buf_size = 1
     buf = [None] * buf_size
     buf_index = 0
 
+    timestamps = []
+
     while True:
+        timestamps.append(time.monotonic())
+        try:
+            print(1 / (timestamps[-1] - timestamps[-11]))
+            # print('fps: {}'.format(round(1/10 * 1 / timestamps[-1] - timestamps[-11])))
+        except IndexError:
+            pass
+
         frame = vs.read()
         frame = np.fliplr(frame)
 
@@ -39,6 +52,9 @@ def video_loop(delay):
             if key == 27:  # Esc.
                 return
 
+        end_ts = time.monotonic()
+
+
     cv2.destroyAllWindows()
     vs.stop()
 
@@ -46,7 +62,7 @@ def video_loop(delay):
 if __name__ == '__main__':
     import sys
 
-    delay_seconds = 60.0
+    delay_seconds = 1.0
     if len(sys.argv) > 1:
         try:
             delay_seconds = float(sys.argv[1])
