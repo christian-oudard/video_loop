@@ -20,7 +20,7 @@ def video_loop(delay):
     cv2.namedWindow('loop', cv2.WINDOW_NORMAL)
     cv2.setWindowProperty('loop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-    buf_size = 1000
+    buf_size = 500
     if buf_size == 0:
         buf_size = 1
     buf = [None] * buf_size
@@ -29,9 +29,10 @@ def video_loop(delay):
     timestamps = []
 
     while True:
-        timestamps.append(time.monotonic())
+        # timestamps.append(time.monotonic())
         try:
-            print(1 / (timestamps[-1] - timestamps[-11]))
+            pass
+            # print(1 / (timestamps[-1] - timestamps[-11]))
             # print('fps: {}'.format(round(1/10 * 1 / timestamps[-1] - timestamps[-11])))
         except IndexError:
             pass
